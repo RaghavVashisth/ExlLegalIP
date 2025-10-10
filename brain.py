@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from PIL import Image
 import plotly.express as px
-import streamlit.components.v1 as components
+import streamlit.components.v1 as componentspip
 import os
 import tempfile
 from report_generator import generate_demand_letter_from_text, create_demand_package_final_reports, create_internal_final_reports
@@ -76,10 +76,10 @@ html, body, [class*="css"]  {
 
 # -------------------- Sidebar --------------------
 with st.sidebar:
-    st.image("exl logo.png", use_container_width=True)
+    st.image("exl logo.png", width ='stretch')
     selected_screen = st.radio("📁 Navigation", [
-        "📊 Claims Dashboard", 
-        "📊 Reviewed Claims Dashboard",
+        "📊 Model Recommendations", 
+        "📊 Reviewed Claims",
         #"📑 Subrogation Workbench",
         #"🧠 Q&A Assistant", 
         "📊 Monitoring Dashboard",
@@ -108,7 +108,7 @@ def load_data():
     return df
 
 df = load_data()
-df = df[df['Reviewed']==0]
+#df = df[df['Reviewed']==0]
 action_detail_mapping = {
                     "Awaiting Additional Info":["Choose an option","Field Report","Inspection Report","Medical Report","Police Report","Property Images","Pending Demand","Pending Counter to Offer"],
                     "Dismiss":["Choose an option","Adequate Reserve","Already Settled","Already with Expert","Already with LL/MCU","Already with SIU","Improper Alert","Arbitration for UM/UIM in this State","ADR"],
@@ -151,7 +151,7 @@ action_detail_mapping = {
 
 # -------------------- 📊 Dashboard Screen --------------------
 
-if selected_screen == "📊 Claims Dashboard":
+if selected_screen == "📊 Model Recommendations":
     st.title("Litigation Propensity Claims Dashboard")
     df = load_data()
     df = df[df['Reviewed']==0]
@@ -160,9 +160,11 @@ if selected_screen == "📊 Claims Dashboard":
             <style>
             div[data-testid="stCheckbox"] {
                 display: flex;
-                height: 50px; 
+                height: 80px; 
                 flex-direction: row; 
-                white-space: nowrap;                 
+                white-space: nowrap; 
+                font-size: 20px;  
+                           
             }
 
             </style>
@@ -170,8 +172,10 @@ if selected_screen == "📊 Claims Dashboard":
     enable_filters = st.checkbox("🔎 Enable Filters", value=True)
     claim_search = st.text_input("🔍 Search by Claim Number", key="claim_search")
     if enable_filters:
-        st.markdown("### 🛠️ Apply Filters")
-        
+        st.markdown("""
+        <div style='text-align:left; height: 80px; margin-bottom: 6px;font-size: 24px'>
+            <b>🛠️ Apply Filters</b>
+        </div>""", unsafe_allow_html=True)
         filter_cols = st.columns(2)
         
         with filter_cols[0]:
@@ -276,15 +280,13 @@ if selected_screen == "📊 Claims Dashboard":
         """, unsafe_allow_html=True)
                 st.markdown("""
         <style>
-        div[data-testid="stSelectbox"] {
+        div[data-testid="stSelectbox"]{
             display: flex;
             flex-direction: column;
-            margin-top: -20px;
+            margin-top: -50px;
             align-items: center;      /* Centers horizontally */
             justify-content: center;
-        }
-        div[data-testid="stSelectbox"] label {
-            display: none;            /* Hides Streamlit's default label */
+       
         }
        
         </style>
@@ -341,17 +343,14 @@ if selected_screen == "📊 Claims Dashboard":
     # Add CSS once (to center dropdown itself)
                             st.markdown("""
         <style>
-        div[data-testid="stSelectbox"] {
+        div[data-testid="stSelectbox"]{
             display: flex;
             flex-direction: column;
-            margin-top: -20px;
+            margin-top: -50px;
             align-items: center;      /* Centers horizontally */
             justify-content: center;
         }
-        div[data-testid="stSelectbox"] label {
-            display: none;            /* Hides Streamlit's default label */
-        }
-      
+        
         </style>
         """, unsafe_allow_html=True)
                             if selected_action:
@@ -438,7 +437,7 @@ if selected_screen == "📊 Claims Dashboard":
                         """
                         <style>
                         div.stButton > button {
-                            margin-top: -10px;
+                            margin-top: -15px;
                             margin-left: 8px;
                             width: 85px;
                             height: 40px;
@@ -459,7 +458,7 @@ if selected_screen == "📊 Claims Dashboard":
             with st.container():
                 st.markdown(f"""
                 <div style='
-                    margin-top: 6px;
+                    margin-top: 2px;
                     margin-bottom: 10px;
                     padding: 6px 10px;
                     font-size: 13px;
@@ -468,15 +467,15 @@ if selected_screen == "📊 Claims Dashboard":
                     border-radius: 4px;
                 '>
                 📝
-                <i>Confidence score:</i> {row['confidence_score']:.2f} &nbsp;&nbsp;|&nbsp;&nbsp; 
+                <i>Confidence score for suggested action:</i> {row['confidence_score']:.2f} &nbsp;&nbsp;|&nbsp;&nbsp; 
                 <i>Rationale for suggested Action:</i> {row['rationale']}
                 </div>
                 """, unsafe_allow_html=True)
 
 # -------------------- 📊 Reviewed Claims Screen --------------------
 
-if selected_screen == "📊 Reviewed Claims Dashboard":
-    st.title("Litigation Propensity Reviewed Claims Dashboard")
+if selected_screen == "📊 Reviewed Claims":
+    st.title("Litigation Propensity Claims Dashboard")
     df = load_data()
     df = df[df['Reviewed']==1]
     # Toggle filters
@@ -486,7 +485,8 @@ if selected_screen == "📊 Reviewed Claims Dashboard":
                 display: flex;
                 height: 50px; 
                 flex-direction: row; 
-                white-space: nowrap;                 
+                white-space: nowrap;  
+                font-size: 20px;               
             }
 
             </style>
@@ -496,17 +496,35 @@ if selected_screen == "📊 Reviewed Claims Dashboard":
     claim_search = st.text_input("🔍 Search by Claim Number", key="claim_search")
 
     if enable_filters:
-        st.markdown("### 🛠️ Apply Filters")
+        st.markdown("""
+        <div style='text-align:left; height: 80px; margin-bottom: 6px;font-size: 24px'>
+            <b>🛠️ Apply Filters</b>
+        </div>""", unsafe_allow_html=True)
         filter_cols = st.columns(2)
 
         #with filter_cols[0]:
             #state_filter = st.selectbox('STATE', [" "] + list(df['FTR_JRSDTN_ST_ABBR'].unique()), key='state_filter')
+        st.markdown("<div id='filter_section'>", unsafe_allow_html=True)
+        st.markdown("""
+                                    <style>
+}                                  
+                                    div[data-testid="stSelectbox"] {
+                                        
+                                        align-items: center;      /* Centers horizontally */
+                                        justify-content: center;
+                                
+                                        
+                                    }
 
+                                
+                                    </style>
+                                    """, unsafe_allow_html=True)
         with filter_cols[0]:
             peril_filter = st.selectbox("INCIDENT CAUSE", [" "] + list(df['COL_CD'].unique()), key='peril_filter')
 
         with filter_cols[1]:
             sub_det = st.selectbox("LOB SUB-LOB", [" "] + list(df['SUB_DTL_DESC'].unique()), key='sub_det_filter')
+        st.markdown("</div>", unsafe_allow_html=True)  # close filter_section wrapper
 
         # Apply filters
         filtered_df = df.copy()
@@ -619,22 +637,28 @@ if selected_screen == "📊 Reviewed Claims Dashboard":
             #             key=f"action_details_{idx}_disabled"
             #         )
 
+            
             with cols[7]:
+
                 st.markdown("""
         <div style='text-align:center; height: 30px; margin-bottom: 4px;'>
             <b>Action</b>
         </div>
         """, unsafe_allow_html=True)
+                st.markdown("<div id='row_section1'>"
+                                , unsafe_allow_html=True)
                 st.markdown("""
         <style>
-        div[data-testid="stSelectbox"]p {
-            display: flex;
-            flex-direction: column;
-            margin-top: -20px;
-            align-items: center;      /* Centers horizontally */
-            justify-content: center;
+                    
+                    div[data-testid="stSelectbox"] {
+                        display: flex;
+                        flex-direction: column;
+                        margin-top: -70px;
+                        align-items: center;      /* Centers horizontally */
+                        justify-content: center;
+                        
         }
-       
+    
         </style>
         """, unsafe_allow_html=True)
                 action_options = [
@@ -651,7 +675,7 @@ if selected_screen == "📊 Reviewed Claims Dashboard":
     "In Negotiations",
     "Requesting Mediation"
 ]
-               
+            
                 # Get current user action safely
                 user_action_value = row.get("User_Action")
                 # Show the prefilled suggestion (grey hint text)
@@ -660,23 +684,25 @@ if selected_screen == "📊 Reviewed Claims Dashboard":
                     default_index = action_options.index(user_action_value)
                 else:
                     default_index = 0  # fallback to blank if invalid or missing
-               
+            
                 # Render dropdown
                 selected_action = st.selectbox(
                     "",
                     action_options,
                     key=f"action_{idx}",
                     index=default_index
-    )
-                # selected_action = st.selectbox(
+                    )
+                st.markdown("</div>", unsafe_allow_html=True)  # close filter_section wrapper
+            # selected_action = st.selectbox(
                 #     "",
                 #     ["", "Awaiting Additional Info", "Dismiss", "Engage an Expert","Increase Reserve","Refer to Large Loss","Refer to SIU","Settle","Additional Authority Granted","In Litigation","In Negotiations","Requesting Mediation"],
                 #     key=f"action_{idx}",
                 #     index=["", "Awaiting Additional Info", "Dismiss", "Engage an Expert","Increase Reserve","Refer to Large Loss","Refer to SIU","Settle","Additional Authority Granted","In Litigation","In Negotiations","Requesting Mediation"].index(row['User_Action']) if row['User_Action'] in ["", "Awaiting Additional Info", "Dismiss", "Engage an Expert","Increase Reserve","Refer to Large Loss","Refer to SIU","Settle","Additional Authority Granted","In Litigation","In Negotiations","Requesting Mediation"] else 0
                 # )
-            
+               
+                                
 
-                
+                                    
                 # --- ACTION DETAILS dropdown (depends on Action) ---
                 with cols[8]:
     #  Center the label properly
@@ -687,20 +713,23 @@ if selected_screen == "📊 Reviewed Claims Dashboard":
         """, unsafe_allow_html=True)
     
     # Add CSS once (to center dropdown itself)
+                            st.markdown("<div id='row_section'>", unsafe_allow_html=True)
                             st.markdown("""
-                                    <style>
-                                    div[data-testid="stSelectbox"]p{
-                                        display: flex;
+                            <style>
+
+                                    div[data-testid="stSelectbox"] {
+                                        margin-top: -70px;
                                         flex-direction: column;
-                                        margin-top: -25px;
+                                        
                                         align-items: center;      /* Centers horizontally */
                                         justify-content: center;
-                                        margin-top: -18px !important;   /* pull the whole selectbox up */
-                                        padding-top: 0 !important;
+                                         
                                     }
                                 
                                     </style>
                                     """, unsafe_allow_html=True)
+                           
+
                             if selected_action:
                                 action_details_options = action_detail_mapping.get(selected_action, [])
                                 
@@ -732,6 +761,7 @@ if selected_screen == "📊 Reviewed Claims Dashboard":
                                     [""],
                                     key=f"action_details_{idx}_disabled"
                                 )
+                                st.markdown("</div>", unsafe_allow_html=True)  # close filter_section wrapper
 
 
 
@@ -754,7 +784,7 @@ if selected_screen == "📊 Reviewed Claims Dashboard":
                         """
                         <style>
                         div.stButton > button {
-                            margin-top: -10px;
+                            margin-top: -15px;
                             margin-left: 8px;
                             width: 85px;
                             height: 40px;
@@ -771,6 +801,22 @@ if selected_screen == "📊 Reviewed Claims Dashboard":
                     df_all.to_csv(data_path, index=False)
                     
                     st.success(f"✅ Action saved for Claim {row['Claim_Number']}")
+
+            with st.container():
+                st.markdown(f"""
+                <div style='
+                    margin-top: 2px;
+                    margin-bottom: 10px;
+                    padding: 6px 10px;
+                    font-size: 13px;
+                    background-color: #FFFFFF;
+                    color: #444;
+                    border-radius: 4px;'>
+                📝
+                <i>Reviewed 2 days ago</i>
+                </div>
+                """, unsafe_allow_html=True)
+
 
 
 # # # -------------------- 📈 KPI Screen --------------------
@@ -834,7 +880,7 @@ elif selected_screen == "📊 Monitoring Dashboard":
         src="https://app.powerbi.com/reportEmbed?reportId=49d274d9-37a4-4f06-ac05-dc7a98960ed9&autoAuth=true&ctid=dafe49bc-5ac3-4310-97b4-3e44a28cbf18&actionBarEnabled=true" 
         frameborder="0" allowFullScreen="true"></iframe>
     """
-    components.html(powerbi_embed_url, height=650)
+    componentspip.html(powerbi_embed_url, height=650)
 
 
 # # -------------------- 🧠 Q&A Assistant --------------------
