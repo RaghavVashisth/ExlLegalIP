@@ -10,6 +10,8 @@ import base64
 from llm_processing import llm
 import shutil
 import time
+from scipy.spatial import ConvexHull
+from matplotlib.patches import Polygon
 
 
 # -------------------- Login Credential System --------------------
@@ -174,7 +176,7 @@ section[data-testid="stSidebar"] {
 st.markdown(f"""
 <div class="top-banner">
     <div class="banner-center">
-        Litigation Action & Insights Desk
+        Claims Litigation360
     </div>
     <div class="banner-right">
         Welcome, {st.session_state.get("username", "User")}
@@ -193,12 +195,13 @@ with st.container():
         st.markdown("<div style='font-weight:700; font-size:22px;margin-left: 25px; margin-bottom:0px;'>Navigation Panel</div>", unsafe_allow_html=True)
         
         selected_screen = st.radio("", [
-            "Model Recommendations",
-            "Reviewed Claims",
-            # "📑 Subrogation Workbench",
-            # "🧠 Q&A Assistant",
+            "Attorney Rep Model Referrals",
+            "Attorney Rep Reviewed Claims",
+            "Legal Propensity Model Referrals",
+            "Legal Propensity Reviewed Claims",
             "Monitoring Dashboard",
-            # "📈 Litigation KPIs"
+            "Law Firm Assignment",
+            "Legal Spend Dashboard"
         ])
 
     # -------------------- Load Data --------------------
@@ -206,6 +209,7 @@ with st.container():
     # data_path = "Syntheticdataset_litigation.csv"
     data_path = "merged_file_1.csv"
     Notes_path = "Notes1.csv"
+    att_data_path = "atty_rep_model_predictions.csv"
 
     @st.cache_data(ttl=0)
     def load_data():
@@ -221,8 +225,17 @@ with st.container():
         if 'User_Action_Details' not in df.columns:
             df['User_Action_Details'] = ''
         return df
+    def att_load_data():
+        df = pd.read_csv(att_data_path)
+        if 'User_Action' not in df.columns:
+            df['User_Action'] = ''
+        if 'User_Action_Details' not in df.columns:
+            df['User_Action_Details'] = ''
+
+        return df
 
     df = load_data()
+    att_df = att_load_data()
     # df = df[df['Reviewed']==0]
     action_detail_mapping = {
         "Awaiting Additional Info": ["Choose an option", "Field Report", "Inspection Report", "Medical Report", "Police Report", "Property Images", "Pending Demand", "Pending Counter to Offer"],
@@ -237,6 +250,39 @@ with st.container():
         "In Negotiations": [],
         "Requesting Mediation": []
     }
+
+    att_action_map = {
+        "Contact Customer": [
+            "Clarify dispute",
+            "Set expectations"
+        ],
+        "Review Coverage": [
+            "Explain decision"
+        ],
+        "Review Handling": [
+            "Validate position"
+        ],
+        "Adjust Strategy": [
+            "Request authority",
+            "Offer goodwill"
+        ],
+        "Expedite Claim": [
+            "Advance payment",
+            "Resolve open items"
+        ],
+        "Escalate Claim": [
+            "Refer to UM",
+            "Engage supervisor"
+        ],
+        "Prepare Defense": [
+            "Preserve documentation",
+            "Early legal consult"
+        ]
+    }
+
+
+
+    
 
     # ---------------------Resetting Directories--------------
     # # Directories you want to clear
@@ -264,12 +310,736 @@ with st.container():
     #     st.sidebar.success("✅ All data cleared from directories!")
     #     st.rerun()   # refresh app after reset
 
+
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 # -------------------- 📊 Dashboard Screen --------------------
 
-if selected_screen == "Model Recommendations":
-    st.title("Litigation Propensity Claims Dashboard")
+if selected_screen == "Attorney Rep Model Referrals":
+    st.title("Attorney Rep Propensity Claims Dashboard")
+    # df = load_data()
+    df = att_df[att_df['Reviewed'] == 0]
+    st.markdown("""
+                    <div style='text-align:left; height: 30px; font-size: 25px; margin-top: 10px'>
+                        <b>Filter & Search Panel</b>
+                    </div>""", unsafe_allow_html=True)
+    # --- Create a wrapper DIV for your filter section ---
+    st.markdown('<div id="filter-section">', unsafe_allow_html=True)
+    filter_cols = st.columns(2)
+    st.markdown("""
+                    <style>
+                    /* Align selectboxes and text_input in a single line */
+                    #filter-section div[data-testid="stTextInput"] label,
+                    #filter-section div[data-testid="stSelectbox"] label {
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        font-weight: 600;
+                        color: #333;
+
+                    }
+
+                    /* Reduce top margin/padding of Streamlit inputs */
+                    #filter-section div[data-testid="stTextInput"], 
+                    #filter-section div[data-testid="stSelectbox"] {
+                        margin-top: -50px !important;
+                    }
+
+                    /* Keep input box heights consistent */
+                    #filter-section div[data-testid="stTextInput"] input,
+                    #filter-section div[data-testid="stSelectbox"] select {
+                        height: 40px !important;
+                        padding: 0px 8px !important;
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
+
+    with filter_cols[0]:
+        peril_filter = st.selectbox(
+            "INCIDENT CAUSE", [" "] + list(df['COL_CD'].unique()), key='peril_filter')
+
+    # with filter_cols[1]:
+    #     sub_det = st.selectbox(
+    #         "LOB SUB-LOB", [" "] + list(df['SUB_DTL_DESC'].unique()), key='sub_det_filter')
+    with filter_cols[1]:
+        claim_search = st.text_input("SEARCH CLAIM NUMBER", key="claim_search")
+
+    # Apply filters
+    filtered_df = df.copy()
+    if peril_filter != " ":
+        filtered_df = filtered_df[filtered_df['COL_CD'] == peril_filter]
+    # if sub_det != " ":
+    #     filtered_df = filtered_df[filtered_df['SUB_DTL_DESC'] == sub_det]
+
+        # filtered_df = df.copy()
+
+    # Apply claim number search if entered
+    if claim_search.strip():
+        filtered_df = filtered_df[filtered_df['Claim_Number'].astype(
+            str).str.contains(claim_search.strip(), case=False)]
+
+    # suspicious_df = filtered_df[filtered_df['Prediction'] == 1].copy()
+    suspicious_df = filtered_df.sort_values(by=['Model_probabibilty'], ascending=False)
+# --- Close the wrapper DIV ---
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Download filtered suspicious claims
+    if not suspicious_df.empty:
+        download_df = suspicious_df.copy()
+        download_csv = download_df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 Download CSV",
+            data=download_csv,
+            file_name="suspicious_claims.csv",
+            mime="text/csv"
+        )
+
+    if suspicious_df.empty:
+        st.info(
+            "⚠️ No suspected litigated claims found with current filters or search.")
+    else:
+        st.subheader("Review and Act on Model Recommended Claims")
+
+        for idx, row in suspicious_df.iterrows():
+            st.markdown("---")
+            cols = st.columns(
+                [2.2, 3.8, 1.8, 4.2, 3.3, 2.2, 1.8, 4.0, 4.0, 3.0])
+
+            with cols[0]:
+                st.markdown(f"**Claim:** {row['CLM_NBR']}")
+            with cols[1]:
+                st.markdown(f"**Incident Cause:** {row['COL_CD']}")
+            with cols[2]:
+                st.markdown(f"**Accident State:** {row['ACDNT_ST_ABBR']}")
+            with cols[3]:
+                st.markdown(
+                    f"**Accident City:** {row['ACDNT_CITY']}")
+            with cols[4]:
+                st.markdown(f"**Clmnt Age** {row['DRV_AGE_AT_TIME_OF_LOSS']}")
+            with cols[5]:
+                st.markdown(f"**ML Score:** {row['Model_probabibilty']}")
+
+            # --- New Column for Notes Summary Toggle ---
+            with cols[6]:
+                st.markdown("**Notes**")
+                st.markdown("""
+                                <style>
+                                div[data-testid="stCheckbox"] 
+                                {
+                                    margin-top: -46px;
+                                    margin-left: 6px;
+                                    width: 120px !important;
+                                    height: 50px !important;
+                                    display: flex;
+                                }
+                                </style>
+                            """, unsafe_allow_html=True
+                            )
+
+                show_summary = st.toggle("", key=f"notes_toggle_{idx}")
+
+            if show_summary:
+                with st.spinner("Generating summary using LLM..."):
+                    # Pass the claim notes (or whatever column contains raw notes)
+                    summary_text = llm(row['Claim Note'])
+
+                    st.text_area(
+                        "Claim Notes Summary",
+                        value=summary_text,
+                        height=500,
+                        key=f"notes_area_{idx}"
+                    )
+
+            # --- ACTION COLUMN ---
+            with cols[7]:
+                # Label above dropdown
+                st.markdown(
+                    """
+                    <div id="action-section" style='text-align:center; margin-bottom:2px;'>
+                        <b>Action</b>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+                action_options = [
+                    "",
+                    "Contact Customer",
+                    "Review Coverage",
+                    "Review Handling",
+                    "Adjust Strategy",
+                    "Expedite Claim",
+                    "Escalate Claim",
+                    "Prepare Defense"
+                ]
+
+                # Determine default index safely
+                user_action_value = row.get("User_Action")
+                default_index = action_options.index(
+                    user_action_value) if user_action_value in action_options else 0
+
+                # Render Action dropdown
+                selected_action = st.selectbox(
+                    label="",
+                    options=action_options,
+                    key=f"action_{idx}",
+                    index=default_index,
+                    label_visibility="collapsed"
+                )
+
+            # --- ACTION DETAILS COLUMN ---
+            with cols[8]:
+                st.markdown(
+                    """
+                    <div id="action-details-section" style='text-align:center; margin-bottom:2px;'>
+                        <b>Action Details</b>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+                # Get detail options based on Action
+                if selected_action:
+                    action_details_options = att_action_map.get(
+                        selected_action, [])
+                    options = [] + action_details_options
+
+                    user_action_detail_value = row.get("User_Action_Details")
+                    default_index = (
+                        options.index(user_action_detail_value)
+                        if user_action_detail_value in options
+                        else 0
+                    )
+
+                    selected_detail = st.selectbox(
+                        label="",
+                        options=options,
+                        key=f"action_details_{idx}",
+                        index=default_index,
+                        label_visibility="collapsed"
+                    )
+
+                else:
+                    selected_detail = st.selectbox(
+                        label="",
+                        options=[""],
+                        key=f"action_details_{idx}_disabled",
+                        label_visibility="collapsed"
+                    )
+
+            # --- UNIVERSAL ALIGNMENT STYLING ---
+            st.markdown(
+                """
+                        <style>
+                            /* Consistent layout for both Action and Action Details dropdowns */
+                            #action-section div[data-testid="stSelectbox"],
+                            #action-details-section div[data-testid="stSelectbox"] {
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                justify-content: center;
+                                margin-top: -6px !important;   /* Align both dropdowns neatly under label */
+                                margin-bottom: 10px;
+                                height: auto;
+                            }
+
+                            /* Uniform dropdown width and centered text */
+                            #action-section div[data-testid="stSelectbox"] select,
+                            #action-details-section div[data-testid="stSelectbox"] select {
+                                width: 160px;
+                                text-align: center;
+                            }
+
+                            /* This targets the visible Streamlit selectbox box, version-agnostic */
+                            div[data-testid="stSelectbox"] [data-baseweb="select"] > div:nth-child(1)
+                        {
+                                
+                                border-radius: 6px !important;
+                                color: #000000
+                                /*#185a9d #4682B4!important;*/
+                                
+                            }
+                        </style>
+                        """,
+                unsafe_allow_html=True
+            )
+            with cols[9]:
+                st.markdown("""
+                    <div style= text-align:center; height: 30px;>
+                        <b>Save</b>
+                    </div>
+                    """, unsafe_allow_html=True)
+                # st.markdown("**Save**")
+                st.markdown(
+                    """
+                        <style>
+                        div.stButton > button {
+                            margin-top: -15px;
+                            margin-left: 8px;
+                            width: 100px;
+                            height: 40px;
+                            display: flex;
+                            
+                        }
+                        </style>
+                        """,
+                    unsafe_allow_html=True
+                )
+                if st.button("💾", key=f"save_{idx}"):
+                    df_all = pd.read_csv(att_data_path)
+                    df_all.at[idx, 'User_Action'] = selected_action
+                    df_all.at[idx, "User_Action_Details"] = selected_detail
+                    df_all.at[idx, "Reviewed"] = 1
+
+                    df_all.to_csv(att_data_path, index=False)
+
+                    st.success(
+                        f"✅ Action saved for Claim {row['CLM_NBR']}")
+
+            with st.container():
+                st.markdown(f"""
+                <div style='
+                    margin-top: 2px;
+                    margin-bottom: 10px;
+                    padding: 6px 10px;
+                    font-size: 13px;
+                    background-color: #f9f9f9;
+                    color: #444;
+                    border-radius: 4px;
+                '>
+                📝
+                <i>Confidence score for suggested action:</i> {row['confidence_score']:.2f} &nbsp;&nbsp;|&nbsp;&nbsp; 
+                <i>Rationale for suggested Action:</i> {row['rationale']}
+                </div>
+                """, unsafe_allow_html=True)
+
+elif selected_screen == "Attorney Rep Reviewed Claims":
+
+    st.title("Attorney Rep Reviewed Claims")
+    
+    df = att_df[att_df['Reviewed'] == 1]
+    st.markdown("""
+                    <div style='text-align:left; height: 30px; font-size: 25px; margin-top: 10px'>
+                        <b>Filter & Search Panel</b>
+                    </div>""", unsafe_allow_html=True)
+    # --- Create a wrapper DIV for your filter section ---
+    st.markdown('<div id="filter-section">', unsafe_allow_html=True)
+    filter_cols = st.columns(2)
+    st.markdown("""
+                    <style>
+                    /* Align selectboxes and text_input in a single line */
+                    #filter-section div[data-testid="stTextInput"] label,
+                    #filter-section div[data-testid="stSelectbox"] label {
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        font-weight: 600;
+                        color: #333;
+
+                    }
+
+                    /* Reduce top margin/padding of Streamlit inputs */
+                    #filter-section div[data-testid="stTextInput"], 
+                    #filter-section div[data-testid="stSelectbox"] {
+                        margin-top: -50px !important;
+                    }
+
+                    /* Keep input box heights consistent */
+                    #filter-section div[data-testid="stTextInput"] input,
+                    #filter-section div[data-testid="stSelectbox"] select {
+                        height: 40px !important;
+                        padding: 0px 8px !important;
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
+
+    with filter_cols[0]:
+        peril_filter = st.selectbox(
+            "INCIDENT CAUSE", [" "] + list(df['COL_CD'].unique()), key='peril_filter')
+
+    # with filter_cols[1]:
+    #     sub_det = st.selectbox(
+    #         "LOB SUB-LOB", [" "] + list(df['SUB_DTL_DESC'].unique()), key='sub_det_filter')
+    with filter_cols[1]:
+        claim_search = st.text_input("SEARCH CLAIM NUMBER", key="claim_search")
+
+    # Apply filters
+    filtered_df = df.copy()
+    if peril_filter != " ":
+        filtered_df = filtered_df[filtered_df['COL_CD'] == peril_filter]
+    # if sub_det != " ":
+    #     filtered_df = filtered_df[filtered_df['SUB_DTL_DESC'] == sub_det]
+
+        # filtered_df = df.copy()
+
+    # Apply claim number search if entered
+    if claim_search.strip():
+        filtered_df = filtered_df[filtered_df['Claim_Number'].astype(
+            str).str.contains(claim_search.strip(), case=False)]
+
+    # suspicious_df = filtered_df[filtered_df['Prediction'] == 1].copy()
+    suspicious_df = filtered_df.sort_values(by=['Model_probabibilty'], ascending=False)
+
+    # Download filtered suspicious claims
+    if not suspicious_df.empty:
+        download_df = suspicious_df.copy()
+        download_csv = download_df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 Download CSV",
+            data=download_csv,
+            file_name="suspicious_claims.csv",
+            mime="text/csv"
+        )
+
+    if suspicious_df.empty:
+        st.info(
+            "⚠️ No suspected litigated claims found with current filters or search.")
+    else:
+        st.subheader("Reviewed Claims")
+
+        for idx, row in suspicious_df.iterrows():
+            st.markdown("---")
+            cols = st.columns(
+                [2.2, 3.8, 1.8, 4.2, 3.3, 2.2, 1.8, 4.0, 4.0, 3.0])
+
+            with cols[0]:
+                st.markdown(f"**Claim:** {row['CLM_NBR']}")
+            with cols[1]:
+                st.markdown(f"**Incident Cause:** {row['COL_CD']}")
+            with cols[2]:
+                st.markdown(f"**Accident State:** {row['ACDNT_ST_ABBR']}")
+            with cols[3]:
+                st.markdown(
+                    f"**Accident City:** {row['ACDNT_CITY']}")
+            with cols[4]:
+                st.markdown(f"**Clmnt Age** {row['DRV_AGE_AT_TIME_OF_LOSS']}")
+            # with cols[7]: st.markdown(f"**Severity:** {row['CLM_LOSS_SEVERITY_CD']}")
+            with cols[5]:
+                st.markdown(f"**ML Score:** {row['Model_probabibilty']}")
+
+            # --- New Column for Notes Summary Toggle ---
+            with cols[6]:
+                st.markdown("**Notes**")
+                st.markdown(
+                    """
+                        <style>
+                        div[data-testid="stCheckbox"] {
+                            margin-top: -46px;
+                            margin-left: 6px;
+                            width: 120px !important;
+                            height: 50px !important;
+                            display: flex;
+                        }
+                        </style>
+                        """,
+                    unsafe_allow_html=True
+                )
+                show_summary = st.toggle("", key=f"notes_toggle_{idx}")
+            if show_summary:
+                with st.spinner("Generating summary using LLM..."):
+                    # Pass the claim notes (or whatever column contains raw notes)
+                    summary_text = llm(row['Claims_Notes'])
+
+                    st.text_area(
+                        "Claim Notes Summary",
+                        value=summary_text,
+                        height=500,
+                        key=f"notes_area_{idx}"
+                    )
+
+    #         # --- ACTION COLUMN ---
+    #         with cols[7]:
+    #             # Label above dropdown
+    #             st.markdown(
+    #                 """
+    #                 <div id="action-section" style='text-align:center; margin-bottom:2px;'>
+    #                     <b>Action</b>
+    #                 </div>
+    #                 """,
+    #                 unsafe_allow_html=True
+    #             )
+
+    #             action_options = [
+    #                 "",
+    #                 "Awaiting Additional Info",
+    #                 "Dismiss",
+    #                 "Engage an Expert",
+    #                 "Increase Reserve",
+    #                 "Refer to Large Loss",
+    #                 "Refer to SIU",
+    #                 "Settle",
+    #                 "Additional Authority Granted",
+    #                 "In Litigation",
+    #                 "In Negotiations",
+    #                 "Requesting Mediation"
+    #             ]
+
+    #             # Determine default index safely
+    #             user_action_value = row.get("User_Action")
+    #             default_index = action_options.index(
+    #                 user_action_value) if user_action_value in action_options else 0
+
+    #             # Render Action dropdown
+    #             selected_action = st.selectbox(
+    #                 label="",
+    #                 options=action_options,
+    #                 key=f"action_{idx}",
+    #                 index=default_index,
+    #                 label_visibility="collapsed"
+    #             )
+
+    #         # --- ACTION DETAILS COLUMN ---
+    #         with cols[8]:
+    #             st.markdown(
+    #                 """
+    #                 <div id="action-details-section" style='text-align:center; margin-bottom:2px;'>
+    #                     <b>Action Details</b>
+    #                 </div>
+    #                 """,
+    #                 unsafe_allow_html=True
+    #             )
+
+    #             # Get detail options based on Action
+    #             if selected_action:
+    #                 action_details_options = action_detail_mapping.get(
+    #                     selected_action, [])
+    #                 options = [] + action_details_options
+
+    #                 user_action_detail_value = row.get("User_Action_Details")
+    #                 default_index = (
+    #                     options.index(user_action_detail_value)
+    #                     if user_action_detail_value in options
+    #                     else 0
+    #                 )
+
+    #                 selected_detail = st.selectbox(
+    #                     label="",
+    #                     options=options,
+    #                     key=f"action_details_{idx}",
+    #                     index=default_index,
+    #                     label_visibility="collapsed"
+    #                 )
+
+    #             else:
+    #                 selected_detail = st.selectbox(
+    #                     label="",
+    #                     options=[""],
+    #                     key=f"action_details_{idx}_disabled",
+    #                     label_visibility="collapsed"
+    #                 )
+
+    #         # --- UNIVERSAL ALIGNMENT STYLING ---
+    #         st.markdown(
+    #             """
+    # <style>
+    #     /* Consistent layout for both Action and Action Details dropdowns */
+    #     #action-section div[data-testid="stSelectbox"],
+    #     #action-details-section div[data-testid="stSelectbox"] {
+    #         display: flex;
+    #         flex-direction: column;
+    #         align-items: center;
+    #         justify-content: center;
+    #         margin-top: -6px !important;   /* Align both dropdowns neatly under label */
+    #         margin-bottom: 10px;
+    #         height: auto;
+    #     }
+
+    #     /* Uniform dropdown width and centered text */
+    #     #action-section div[data-testid="stSelectbox"] select,
+    #     #action-details-section div[data-testid="stSelectbox"] select {
+    #         width: 160px;
+    #         text-align: center;
+    #     }
+
+    #     /* This targets the visible Streamlit selectbox box, version-agnostic */
+    #     div[data-testid="stSelectbox"] [data-baseweb="select"] > div:nth-child(1)
+    # {
+            
+    #         border-radius: 6px !important;
+    #         color: #000000
+    #         /* #808080 -black #4682B4!important;*/
+            
+    #     }
+    # </style>
+    # """,
+    #             unsafe_allow_html=True
+    #         )
+    #         with cols[9]:
+    #             st.markdown("""
+    #                 <div style= text-align:center; height: 30px;'>
+    #                     <b>Save</b>
+    #                 </div>
+    #                 """, unsafe_allow_html=True)
+    #             # st.markdown("**Save**")
+    #             st.markdown(
+    #                 """
+    #                     <style>
+    #                     div.stButton > button {
+    #                         margin-top: -15px;
+    #                         margin-left: 8px;
+    #                         width: 100px;
+    #                         height: 40px;
+    #                         display: flex;
+    #                     }
+    #                     </style>
+    #                     """,
+    #                 unsafe_allow_html=True
+    #             )
+    #             if st.button("💾", key=f"save_{idx}"):
+    #                 df_all = pd.read_csv(att_data_path)
+    #                 df_all.at[idx, 'User_Action'] = selected_action
+    #                 df_all.at[idx, "User_Action_Details"] = selected_detail
+    #                 df_all.to_csv(att_data_path, index=False)
+
+    #                 st.success(
+    #                     f"✅ Action saved for Claim {row['CLM_NBR']}")
+
+                # --- ACTION COLUMN ---
+            with cols[7]:
+                st.markdown(
+                    """
+                    <div id="action-section" style='text-align:center; margin-bottom:2px;'>
+                        <b>Action</b>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+                action_options = [
+                    "",
+                    "Awaiting Additional Info",
+                    "Dismiss",
+                    "Engage an Expert",
+                    "Increase Reserve",
+                    "Refer to Large Loss",
+                    "Refer to SIU",
+                    "Settle",
+                    "Additional Authority Granted",
+                    "In Litigation",
+                    "In Negotiations",
+                    "Requesting Mediation"
+                ]
+
+                # --- Initialize session state ONLY ONCE ---
+                action_key = f"action_{idx}"
+                if action_key not in st.session_state:
+                    saved_action = row.get("User_Action")
+                    st.session_state[action_key] = (
+                        saved_action if pd.notna(saved_action) else ""
+                    )
+
+                selected_action = st.selectbox(
+                    label="",
+                    options=action_options,
+                    key=action_key,
+                    label_visibility="collapsed"
+                )
+
+
+
+            # --- ACTION DETAILS COLUMN ---
+            with cols[8]:
+                st.markdown(
+                    """
+                    <div id="action-details-section" style='text-align:center; margin-bottom:2px;'>
+                        <b>Action Details</b>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+                details_key = f"action_details_{idx}"
+
+                # Get saved detail safely
+                saved_detail = row.get("User_Action_Details")
+                saved_detail = saved_detail if pd.notna(saved_detail) else ""
+
+                if selected_action:
+                    action_details_options = action_detail_mapping.get(selected_action, [])
+
+                    # 👉 Always include saved value (prevents silent reset)
+                    options = [""] + list(dict.fromkeys(
+                        action_details_options + ([saved_detail] if saved_detail else [])
+                    ))
+
+                    # 👉 Initialize ONLY ONCE
+                    if details_key not in st.session_state:
+                        st.session_state[details_key] = saved_detail
+
+                    selected_detail = st.selectbox(
+                        label="",
+                        options=options,
+                        key=details_key,
+                        label_visibility="collapsed"
+                    )
+
+                else:
+                    st.session_state[details_key] = ""
+                    selected_detail = st.selectbox(
+                        label="",
+                        options=[""],
+                        key=f"{details_key}_disabled",
+                        label_visibility="collapsed"
+                    )
+
+
+            # --- SAVE BUTTON ---
+            with cols[9]:
+                st.markdown("""
+                    <div style='text-align:center; height: 30px;'>
+                        <b>Save</b>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                st.markdown(
+                    """
+                    <style>
+                    div.stButton > button {
+                        margin-top: -15px;
+                        margin-left: 8px;
+                        width: 100px;
+                        height: 40px;
+                        display: flex;
+                    }
+                    </style>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+                if st.button("💾", key=f"save_{idx}"):
+                    df_all = pd.read_csv(att_data_path)
+
+                    df_all.at[idx, "User_Action"] = st.session_state[action_key]
+                    df_all.at[idx, "User_Action_Details"] = st.session_state[details_key]
+
+                    df_all.to_csv(att_data_path, index=False)
+
+                    st.success(f"✅ Action saved for Claim {row['CLM_NBR']}")
+
+            with st.container():
+                st.markdown(f"""
+                <div style='
+                    margin-top: 2px;
+                    margin-bottom: 10px;
+                    padding: 6px 10px;
+                    font-size: 13px;
+                    background-color: #FFFFFF;
+                    color: #444;
+                    border-radius: 4px;'>
+                📝
+                <i>Reviewed 2 days ago</i>
+                </div>
+                """, unsafe_allow_html=True)
+
+
+
+
+
+# -------------------- 📊 Dashboard Screen --------------------
+
+elif selected_screen == "Legal Propensity Model Referrals":
+    st.title("Legal Propensity Model Referrals")
     df = load_data()
     df = df[df['Reviewed'] == 0]
     st.markdown("""
@@ -546,6 +1316,8 @@ if selected_screen == "Model Recommendations":
                     df_all = pd.read_csv(data_path)
                     df_all.at[idx, 'User_Action'] = selected_action
                     df_all.at[idx, "User_Action_Details"] = selected_detail
+                    df_all.at[idx, "Reviewed"] = 1
+
                     df_all.to_csv(data_path, index=False)
 
                     st.success(
@@ -570,9 +1342,9 @@ if selected_screen == "Model Recommendations":
 
 # -------------------- 📊 Reviewed Claims Screen --------------------
 
-if selected_screen == "Reviewed Claims":
+elif selected_screen == "Legal Propensity Reviewed Claims":
 
-    st.title("Litigation Propensity Claims Dashboard")
+    st.title("Legal Propensity Reviewed Claims")
     df = load_data()
     df = df[df['Reviewed'] == 1]
     st.markdown("""
@@ -869,56 +1641,6 @@ if selected_screen == "Reviewed Claims":
                 """, unsafe_allow_html=True)
 
 
-# # # -------------------- 📈 KPI Screen --------------------
-# elif selected_screen == "📈 Subrogation KPIs":
-#     st.title("📈 Subrogation Business KPIs")
-#     st.set_page_config(page_title="Subrogation KPI Dashboard", layout="wide")
-#     # Aggregated KPIs
-#     total_claims = df["Claim_Number"].nunique()
-#     total_paid = df["PAID_FINAL"].sum()
-#     total_target_subro = df["Target_Subro"].sum()
-#     avg_paid = df["PAID_FINAL"].mean()
-#     avg_target_subro = df["Target_Subro"].mean()
-#     Total_Recovered = df['RECOVERY_AMT'].sum()
-#     AVG_Recovered = df['RECOVERY_AMT'].mean()
-
-#     col1, col2, col3, col4, col5, col6 = st.columns(6)
-#     col1.metric("🧾 Total Claims", f"{total_claims}")
-#     col2.metric("💰 Total Paid", f"${total_paid:,.0f}")
-#     col3.metric("🎯 Claims In Subro", f"{total_target_subro:,.0f}")
-#     col4.metric("📉 Avg Paid / Claim", f"${avg_paid:,.0f}")
-#     # col5.metric("📈 Avg Target Subro / Claim", f"${avg_target_subro:,.0f}")
-#     col5.metric("📈 Total Recovered", f"${Total_Recovered:,.0f}")
-#     col6.metric("📈 Avg Recoverd / Claim", f"${AVG_Recovered:,.0f}")
-
-
-#     st.markdown("---")
-
-#     # Aggregated by Accident State
-#     st.subheader("Subrogation KPIs by State")
-#     state_summary = df.groupby("STATE_GROUP").agg({
-#         "Claim_Number": "count",
-#         "PAID_FINAL": "sum",
-#         "Target_Subro": "sum"
-#     }).reset_index().rename(columns={"Claim_Number": "Total Claims"})
-
-#     fig1 = px.bar(state_summary, x="STATE_GROUP", y="Target_Subro",
-#                 title="Target Subrogation by State", labels={"ACDNT_ST_DESC": "State Group"})
-#     st.plotly_chart(fig1, use_container_width=True)
-
-#     # Aggregated by Account Category
-#     st.subheader("Subrogation KPIs by Account Category")
-#     acct_summary = df.groupby("ACCT_CR_DESC").agg({
-#         "Claim_Number": "count",
-#         "PAID_FINAL": "sum",
-#         "Target_Subro": "sum"
-#     }).reset_index().rename(columns={"Claim_Number": "Total Claims"})
-
-#     fig2 = px.bar(acct_summary, x="ACCT_CR_DESC", y="Target_Subro",
-#                 title="Target Subrogation by Account Category", labels={"ACCT_CR_DESC": "Account Category"})
-#     st.plotly_chart(fig2, use_container_width=True)
-
-
 # -------------------- 📊 Monitoring Dashboard --------------------
 elif selected_screen == "Monitoring Dashboard":
     st.title("Monitoring Dashboard - Power BI")
@@ -926,9 +1648,471 @@ elif selected_screen == "Monitoring Dashboard":
     st.markdown("#### Embedded Power BI Dashboard Below:")
 
     powerbi_embed_url = """
-    <iframe title="SUBROGATION PROPENSITY MODEL MONITORING" width="1140" height="600" 
-        src="https://app.powerbi.com/reportEmbed?reportId=49d274d9-37a4-4f06-ac05-dc7a98960ed9&autoAuth=true&ctid=dafe49bc-5ac3-4310-97b4-3e44a28cbf18&actionBarEnabled=true" 
-        frameborder="0" allowFullScreen="true"></iframe>
+    <iframe title="Litigation Propensity Model Monitoring Dashboard" width="1140" height="541.25" src="https://app.powerbi.com/reportEmbed?reportId=1cd0509f-2f9e-4d7a-8bdd-0094e3c65623&autoAuth=true&ctid=dafe49bc-5ac3-4310-97b4-3e44a28cbf18%22 frameborder="0" allowFullScreen="true"></iframe>
+ 
+    """
+    componentspip.html(powerbi_embed_url, height=650)
+
+
+elif selected_screen == "Law Firm Assignment":
+    st.title("Law Firm Assignment")
+
+    import streamlit as st
+    import pandas as pd
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    # -------------------------
+    # Page Config
+    # -------------------------
+    st.set_page_config("Law Firm Assignment", layout="wide")
+
+
+
+    @st.cache_data
+    def load_data():
+        claims = pd.read_csv("model_output_with_predicted_cluster.csv")
+        firms = pd.read_csv("synthetic_litigation_dataset_with_firms_and_cluster.csv")
+        return claims, firms
+
+    claims_df, firms_df = load_data()
+
+
+
+    # -------------------------
+    # Custom CSS
+    # -------------------------
+    st.markdown("""
+    <style>
+    .metric-card {
+        background-color: #f8f9fa;
+        padding: 16px;
+        border-radius: 10px;
+        border: 1px solid #e0e0e0;
+    }
+    .title-card {
+        background-color: #1f3c88;
+        padding: 14px;
+        border-radius: 8px;
+        color: white;
+    }
+    .small-text {
+        font-size: 13px;
+        color: #555;
+    }
+    .badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        background-color: #e6f0ff;
+        display: inline-block;
+        font-size: 12px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # -------------------------
+    # Header
+    # -------------------------
+    # st.markdown(
+    #     "<div class='title-card'><h3>Law Firm Assignment</h3></div>",
+    #     unsafe_allow_html=True
+    # )
+
+    # -------------------------
+    # Claim Context Bar
+    # -------------------------
+    c1, c2, c3, c4, c5 = st.columns([1,0.5,4,1,1])
+
+    with c1: 
+            # -------------------------
+        # Claim Selection
+        # -------------------------
+        claim_idx = st.selectbox(
+            "Select Claim",
+            claims_df.index,
+            format_func=lambda x: f"Claim {x}"
+        )
+
+        claim = claims_df.loc[claim_idx]
+        # st.selectbox("Claim Context", ["CLM-10245", "CLM-10246"])
+
+    with c2:
+        st.metric("Jurisdiction", claim["FTR_JRSDTN_ST_ABBR"])
+        # st.markdown("**State**")
+        # st.write("TX")
+
+    with c3:
+        st.metric("Injury Description", claim["Short_BODY_PART_INJD_DESC"])
+        
+    with c4:
+        st.metric("Demand", claim["DEMAND"])
+
+        # st.markdown("**Exposure**")
+        # st.write("$250K - $500K")
+
+    with c5:
+        st.metric("Offer", claim["OFFER"])
+        # st.markdown("**Stage**")
+        # st.write("OFFER")
+
+    st.divider()
+
+    # -------------------------
+    # Main Section
+    # -------------------------
+    left, right = st.columns([2.5, 1.5])
+
+        
+    with left:
+        st.subheader("Legal Market Segment Identification")
+
+        import pandas as pd
+        import matplotlib.pyplot as plt
+        from matplotlib.patches import Ellipse
+        import numpy as np
+
+        # -----------------------------
+        # Load data
+        # -----------------------------
+        df = pd.read_csv("firm_level_cluster_map_output.csv")
+
+        # Separate firms and centroids
+        firms = df[df["entity_type"] == "firm"]
+        centroids = df[df["entity_type"] == "centroid"]
+
+        # -----------------------------
+        # Cluster color mapping
+        # -----------------------------
+        cluster_colors = {
+            "Efficient Volume Handlers": "#F4B400",      # yellow
+            "Outcome Specialists": "#6A5ACD",            # purple
+            "High-Value Core Firms": "#66C2A5",           # green
+            "High-Cost/ Underperformers": "#5DA5DA"      # blue
+        }
+
+        # -----------------------------
+        # Create plot
+        # -----------------------------
+        fig, ax = plt.subplots(figsize=(12, 7))
+
+        # -----------------------------
+        # Scatter points (firms)
+        # -----------------------------
+        for cluster, color in cluster_colors.items():
+            subset = firms[firms["cluster_id"] == cluster]
+            ax.scatter(
+                subset["PC1"],
+                subset["PC2"],
+                s=50,
+                alpha=0.8,
+                color=color,
+                label=cluster
+                    )
+
+        # -----------------------------
+        # Draw cluster ellipses
+        # -----------------------------
+        # for _, row in centroids.iterrows():
+        #     cluster = row["cluster_id"]
+        #     color = cluster_colors.get(cluster, "#999999")
+
+        #     cluster_points = firms[firms["cluster_id"] == cluster]
+
+        #     x_mean = cluster_points["PC1"].mean()
+        #     y_mean = cluster_points["PC2"].mean()
+        #     x_std = cluster_points["PC1"].std()
+        #     y_std = cluster_points["PC2"].std()
+
+        #     ellipse = Ellipse(
+        #         (x_mean, y_mean),
+        #         width=4 * x_std,
+        #         height=4 * y_std,
+        #         facecolor=color,
+        #         edgecolor=color,
+        #         alpha=0.18
+        #     )
+
+        #     ax.add_patch(ellipse)
+
+        # -----------------------------
+        # Draw cluster convex hulls (tight boundaries)
+        # -----------------------------
+        for cluster, color in cluster_colors.items():
+            cluster_points = firms[firms["cluster_id"] == cluster][["PC1", "PC2"]]
+
+            # Convex hull requires at least 3 points
+            if len(cluster_points) >= 3:
+                hull = ConvexHull(cluster_points.values)
+                hull_points = cluster_points.values[hull.vertices]
+
+                polygon = Polygon(
+                    hull_points,
+                    closed=True,
+                    facecolor=color,
+                    edgecolor=color,
+                    alpha=0.18,
+                    linewidth=1.5
+                )
+
+                ax.add_patch(polygon)
+
+
+
+
+
+
+        # -----------------------------
+        # Plot centroids
+        # -----------------------------
+        ax.scatter(
+            centroids["PC1"],
+            centroids["PC2"],
+            color="black",
+            s=120,
+            marker="X",
+            label="Cluster Centroid"
+        )
+
+    # -----------------------------
+    # Highlight "This Claim" (dynamic firm)
+    # -----------------------------
+        # a = "Phillips & Garcia, LLP"
+        a = claim["Cluster_name"]
+
+        this_claim = firms[firms["firm_name"] == claim["Firm Name"]]
+
+        if not this_claim.empty:
+            x = this_claim.iloc[0]["PC1"]
+            y = this_claim.iloc[0]["PC2"]
+
+            ax.scatter(
+                x,
+                y,
+                s=300,
+                facecolor="white",
+                edgecolor="black",
+                linewidth=2.5,
+                zorder=6
+            )
+
+            ax.text(
+                x,
+                y + 0.35,
+                "This Claim",
+                ha="center",
+                va="center",
+                fontsize=10,
+                bbox=dict(
+                    boxstyle="round,pad=0.4",
+                    fc="#4B0082",
+                    ec="none",
+                    alpha=0.9
+                ),
+                color="white",
+                zorder=7
+            )
+        else:
+            st.warning(f"Firm '{a}' not found in data.")
+
+        # -----------------------------
+        # Labels & styling
+        # -----------------------------
+        # ax.set_title("Legal Market Segment Identification\nClaim Clustering Map", fontsize=14)
+        ax.set_xlabel("PC1")
+        ax.set_ylabel("PC2")
+
+        ax.axhline(0, linestyle="--", alpha=0.3)
+        ax.axvline(0, linestyle="--", alpha=0.3)
+
+        ax.legend(loc="upper left", frameon=False)
+        ax.grid(alpha=0.2)
+
+        plt.tight_layout()
+        # plt.show()
+        st.pyplot(fig)
+
+
+
+
+
+
+
+
+    # -------------------------
+    # Assigned Firm Cluster
+    # -------------------------
+    with right:
+        # a = "Phillips & Garcia, LLP"
+
+        Lit_data_firm_df = pd.read_csv("synthetic_litigation_dataset_with_firms_and_cluster.csv")
+        Cluster_id = Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == a]["Cluster_name"].values[0]
+        Avg_Cycle_Time = int(Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == Cluster_id]["Cycle time"].mean())
+        Win_Rate = round(Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == Cluster_id]["Win rate proxy"].mean()*100,1)
+        Avg_Cost = int(Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == Cluster_id]["Cost per case"].mean())
+
+
+        st.markdown(f"""
+        <div class="metric-card">
+            <h4>Assigned Firm Cluster</h4>
+            <h5>{Cluster_id}</h5>
+            <hr>
+            <b>Avg Cycle Time:</b> {Avg_Cycle_Time} days<br>
+            <b>Win Rate:</b> {Win_Rate}%<br>
+            <b>Avg Cost:</b> ${Avg_Cost}K<br>
+            <hr>
+            <b>Typical Claim Profile</b>
+            <ul>
+                <li>Complex Injury Cases</li>
+                <li>Plaintiff-Friendly Venues</li>
+            </ul>
+            <span class="small-text">22
+            Best suited for long-duration, high-exposure litigation.
+            </span>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.divider()
+
+    # -------------------------
+    # Recommended Firms
+    # -------------------------
+    st.subheader("Recommended Firms (Within Cluster)")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        cycle_time_weight = st.slider(
+            "Cycle Time Weight",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.3,
+            step=0.1
+        )
+    with col2:
+        win_rate_weight = st.slider(
+            "Win Rate Weight",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.3,
+            step=0.1
+        )
+    with col3:
+        Cost_per_case_weight = st.slider(
+            "Cost Per Case Weight",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.3,
+            step=0.1
+        )
+
+
+
+
+    Lit_data_firm_filter_df = Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == Cluster_id]
+
+
+
+    state = claim["FTR_JRSDTN_ST_ABBR"]
+
+
+    Lit_data_firm_filter_df = Lit_data_firm_filter_df[
+        Lit_data_firm_filter_df["state_list"].str.contains(
+            fr"\b{state}\b", na=False
+        )
+    ]
+
+
+    # ---- Compute weighted score ----
+    Lit_data_firm_filter_df['Weighted_Score'] = (
+        cycle_time_weight * (10 - Lit_data_firm_filter_df['Cycle time']) +
+        win_rate_weight * Lit_data_firm_filter_df['Win rate proxy'] +
+        Cost_per_case_weight * (10 - Lit_data_firm_filter_df['Cost per case'])
+    )
+
+    top_firms = Lit_data_firm_filter_df.sort_values(
+        "Weighted_Score", ascending=False
+    ).head(3)
+
+    # ---- Layout ----
+    f1, f2, f3, f4 = st.columns([1.2, 1.2, 1.2, 1])
+
+    # ---- Build firms list SAFELY ----
+    firms = []
+
+    for _, row in top_firms.iterrows():
+        firms.append(
+            (
+                row["Firm Name"],
+                row["state_list"],
+                f"{round(row['Win rate proxy'] * 100, 1)}%",
+                f"${int(row['Cost per case'])}K",
+                f"{int(row['Cycle time'])} Days"
+            )
+        )
+
+    # ---- Guard: no firms found ----
+    if not firms:
+        st.warning("No recommended firms found for the selected criteria.")
+    else:
+        # ---- Render firm cards ----
+        for col, firm in zip([f1, f2, f3], firms):
+            with col:
+                st.markdown(
+                    f"""
+                    <div class="metric-card">
+                        <h5>{firm[0]} ✅</h5>
+                        <span class = "large-text">{state}</span>
+                        <hr>
+                        <b>Win Rate:</b> {firm[2]}<br>
+                        <b>Avg Cost:</b> {firm[3]}<br>
+                        <b>Cycle Time:</b> {firm[4]}<br>
+                        
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+    # -------------------------
+    # Decision Support Summary
+    # -------------------------
+    with f4:
+        progress = claim["proba"]
+        progres = round(claim["proba"] * 100, 1)
+
+        st.markdown(f"""
+        <div class="metric-card">
+            <h5>Decision Support Summary</h5>
+            <b>Model Confidence {progres}%</b>
+        </div>
+        """, unsafe_allow_html=True)
+
+ # e.g., 0.84 for 84%
+
+        st.progress(progress)
+
+        st.markdown("""
+        <span class="small-text">
+        Decision support only.<br>
+        Final assignment at adjuster discretion.
+        </span>
+        """, unsafe_allow_html=True)
+
+        st.radio(
+            "Optimization Strategy",
+            ["Outcome Focused", "Cost Focused"],
+            horizontal=True
+        )
+
+
+
+
+
+# -------------------- 📊 Monitoring Dashboard --------------------
+elif selected_screen == "Legal Spend Dashboard":
+    st.title("Monitoring Dashboard - Power BI")
+
+    st.markdown("#### Embedded Power BI Dashboard Below:")
+
+    powerbi_embed_url = """
+    <iframe title="Legal Expense Dashboard" width="1140" height="541.25" src="https://app.powerbi.com/reportEmbed?reportId=dbc06794-896c-494e-a901-caa07670f375&autoAuth=true&ctid=dafe49bc-5ac3-4310-97b4-3e44a28cbf18%22 frameborder="0" allowFullScreen="true"></iframe>
+ 
     """
     componentspip.html(powerbi_embed_url, height=650)
 
