@@ -317,7 +317,7 @@ with st.container():
 # -------------------- 📊 Dashboard Screen --------------------
 
 if selected_screen == "Attorney Rep Model Referrals":
-    st.title("Attorney Rep Propensity Claims Dashboard")
+    st.title("Attorney Rep Claim Referrals")
     # df = load_data()
     df = att_df[att_df['Reviewed'] == 0]
     st.markdown("""
@@ -416,9 +416,9 @@ if selected_screen == "Attorney Rep Model Referrals":
                 st.markdown(
                     f"**Accident City:** {row['ACDNT_CITY']}")
             with cols[4]:
-                st.markdown(f"**Clmnt Age** {row['DRV_AGE_AT_TIME_OF_LOSS']}")
+                st.markdown(f"**Clmnt Age** {int(row['DRV_AGE_AT_TIME_OF_LOSS'])}")
             with cols[5]:
-                st.markdown(f"**ML Score:** {row['Model_probabibilty']}")
+                st.markdown(f"**ML Score:** {round(row['Model_probabibilty'], 2)}")
 
             # --- New Column for Notes Summary Toggle ---
             with cols[6]:
@@ -713,10 +713,10 @@ elif selected_screen == "Attorney Rep Reviewed Claims":
                 st.markdown(
                     f"**Accident City:** {row['ACDNT_CITY']}")
             with cols[4]:
-                st.markdown(f"**Clmnt Age** {row['DRV_AGE_AT_TIME_OF_LOSS']}")
+                st.markdown(f"**Clmnt Age** {int(row['DRV_AGE_AT_TIME_OF_LOSS'])}")
             # with cols[7]: st.markdown(f"**Severity:** {row['CLM_LOSS_SEVERITY_CD']}")
             with cols[5]:
-                st.markdown(f"**ML Score:** {row['Model_probabibilty']}")
+                st.markdown(f"**ML Score:** {round(row['Model_probabibilty'], 2)}")
 
             # --- New Column for Notes Summary Toggle ---
             with cols[6]:
@@ -739,7 +739,7 @@ elif selected_screen == "Attorney Rep Reviewed Claims":
             if show_summary:
                 with st.spinner("Generating summary using LLM..."):
                     # Pass the claim notes (or whatever column contains raw notes)
-                    summary_text = llm(row['Claims_Notes'])
+                    summary_text = llm(row['Claim Note'])
 
                     st.text_area(
                         "Claim Notes Summary",
@@ -1957,9 +1957,9 @@ elif selected_screen == "Law Firm Assignment":
             <h4>Assigned Firm Cluster</h4>
             <h5>{Cluster_id}</h5>
             <hr>
-            <b>Avg Cycle Time:</b> {Avg_Cycle_Time} days<br>
+            <b>Avg Cycle Time:</b> {Avg_Cycle_Time * 100} days<br>
             <b>Win Rate:</b> {Win_Rate}%<br>
-            <b>Avg Cost:</b> ${Avg_Cost}K<br>
+            <b>Avg Cost:</b> ${Avg_Cost *10}K<br>
             <hr>
             <b>Typical Claim Profile</b>
             <ul>
@@ -2044,8 +2044,8 @@ elif selected_screen == "Law Firm Assignment":
                 row["Firm Name"],
                 row["state_list"],
                 f"{round(row['Win rate proxy'] * 100, 1)}%",
-                f"${int(row['Cost per case'])}K",
-                f"{int(row['Cycle time'])} Days"
+                f"${int(row['Cost per case']*10)}K",
+                f"{int(row['Cycle time']) *100} Days"
             )
         )
 
@@ -2107,7 +2107,7 @@ elif selected_screen == "Law Firm Assignment":
 
 # -------------------- 📊 Monitoring Dashboard --------------------
 elif selected_screen == "Legal Spend Dashboard":
-    st.title("Monitoring Dashboard - Power BI")
+    st.title("Legal Spend Dashboard - Power BI")
 
     st.markdown("#### Embedded Power BI Dashboard Below:")
 
@@ -2504,3 +2504,4 @@ elif selected_screen == "Legal Spend Dashboard":
 #                             st.session_state["selected_claim"] = row["Claim_Number"]
 #                             st.session_state["view"] = "internal_notes"
 #                             st.rerun()
+
