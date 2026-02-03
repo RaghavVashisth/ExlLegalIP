@@ -2110,11 +2110,11 @@ elif selected_screen == "Legal Spend Dashboard":
     # st.markdown("#### Embedded Power BI Dashboard Below:")
 
     powerbi_embed_url = """
- <iframe title="Legal Expense Dashboard" width="1140" height="541.25" src=https://app.powerbi.com/reportEmbed?reportId=dbc06794-896c-494e-a901-caa07670f375&autoAuth=true&ctid=dafe49bc-5ac3-4310-97b4-3e44a28cbf18
+ <iframe title="Legal Expense Dashboard" width="1200" height="800" src=https://app.powerbi.com/reportEmbed?reportId=dbc06794-896c-494e-a901-caa07670f375&autoAuth=true&ctid=dafe49bc-5ac3-4310-97b4-3e44a28cbf18
  frameborder="0" allowFullScreen="true"></iframe>
 
     """
-    componentspip.html(powerbi_embed_url, height=650)
+    componentspip.html(powerbi_embed_url, height=800)
 
 
 # # -------------------- 🧠 Q&A Assistant --------------------
