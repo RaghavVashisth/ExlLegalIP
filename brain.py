@@ -12,6 +12,8 @@ import shutil
 import time
 from scipy.spatial import ConvexHull
 from matplotlib.patches import Polygon
+import numpy as np
+
 
 
 # -------------------- Login Credential System --------------------
@@ -1712,14 +1714,6 @@ elif selected_screen == "Law Firm Assignment":
     """, unsafe_allow_html=True)
 
     # -------------------------
-    # Header
-    # -------------------------
-    # st.markdown(
-    #     "<div class='title-card'><h3>Law Firm Assignment</h3></div>",
-    #     unsafe_allow_html=True
-    # )
-
-    # -------------------------
     # Claim Context Bar
     # -------------------------
     c1, c2, c3, c4, c5 = st.columns([1,0.5,4,1,1])
@@ -1811,33 +1805,6 @@ elif selected_screen == "Law Firm Assignment":
                     )
 
         # -----------------------------
-        # Draw cluster ellipses
-        # -----------------------------
-        # for _, row in centroids.iterrows():
-        #     cluster = row["cluster_id"]
-        #     color = cluster_colors.get(cluster, "#999999")
-
-        #     cluster_points = firms[firms["cluster_id"] == cluster]
-
-        #     x_mean = cluster_points["PC1"].mean()
-        #     y_mean = cluster_points["PC2"].mean()
-        #     x_std = cluster_points["PC1"].std()
-        #     y_std = cluster_points["PC2"].std()
-
-        #     ellipse = Ellipse(
-        #         (x_mean, y_mean),
-        #         width=4 * x_std,
-        #         height=4 * y_std,
-        #         facecolor=color,
-        #         edgecolor=color,
-        #         alpha=0.18
-        #     )
-
-        #     ax.add_patch(ellipse)
-
-        # -----------------------------
-        # Draw cluster convex hulls (tight boundaries)
-        # -----------------------------
         for cluster, color in cluster_colors.items():
             cluster_points = firms[firms["cluster_id"] == cluster][["PC1", "PC2"]]
 
@@ -1859,11 +1826,6 @@ elif selected_screen == "Law Firm Assignment":
 
 
 
-
-
-
-        # -----------------------------
-        # Plot centroids
         # -----------------------------
         ax.scatter(
             centroids["PC1"],
@@ -1945,162 +1907,411 @@ elif selected_screen == "Law Firm Assignment":
     with right:
         # a = "Phillips & Garcia, LLP"
 
-        Lit_data_firm_df = pd.read_csv("synthetic_litigation_dataset_with_firms_and_cluster.csv")
-        Cluster_id = Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == a]["Cluster_name"].values[0]
-        Avg_Cycle_Time = int(Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == Cluster_id]["Cycle time"].mean())
-        Win_Rate = round(Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == Cluster_id]["Win rate proxy"].mean()*100,1)
-        Avg_Cost = int(Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == Cluster_id]["Cost per case"].mean())
+        # Lit_data_firm_df = pd.read_csv("synthetic_litigation_dataset_with_firms_and_cluster.csv")
+        # Cluster_id = Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == a]["Cluster_name"].values[0]
+        # Avg_Cycle_Time = int(Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == Cluster_id]["Cycle time"].mean())
+        # Win_Rate = round(Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == Cluster_id]["Win rate proxy"].mean()*100,1)
+        # Avg_Cost = int(Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == Cluster_id]["Cost per case"].mean())
+        # Avg_claim_closed_cnt = Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == Cluster_id]["Case closed count"]
+        # Avg_claim_closed_cnt = int((1 / (1 + np.exp(-Avg_claim_closed_cnt.mean()))) * 100)
+        # Paid_post_appeal = Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == Cluster_id]["Paid post appeal"]
+        # Avg_paid_post_appeal = int((1 / (1 + np.exp(-Paid_post_appeal.mean()))) * 100)
 
 
-        st.markdown(f"""
-        <div class="metric-card">
-            <h4>Assigned Firm Cluster</h4>
-            <h5>{Cluster_id}</h5>
-            <hr>
-            <b>Avg Cycle Time:</b> {Avg_Cycle_Time * 100} days<br>
-            <b>Win Rate:</b> {Win_Rate}%<br>
-            <b>Avg Cost:</b> ${Avg_Cost *10}K<br>
-            <hr>
-            <b>Typical Claim Profile</b>
-            <ul>
-                <li>Complex Injury Cases</li>
-                <li>Plaintiff-Friendly Venues</li>
-            </ul>
-            <span class="small-text">22
-            Best suited for long-duration, high-exposure litigation.
-            </span>
-        </div>
-        """, unsafe_allow_html=True)
+
+
+        # cluster_profile_map = {
+        #     "High-Value Core Firms": [
+        #         "Strong win rates with balanced cost and cycle time",
+        #         "Premium fee structure",
+        #         "Reliable for high-value cases"
+        #     ],
+
+        #     "High-Cost / Underperformers": [
+        #         "High cost per case",
+        #         "Weaker win rates and slower cycle times",
+        #         "Requires tighter performance governance"
+        #     ],
+
+        #     "Outcome Specialists": [
+        #         "Highest win rates",
+        #         "Moderate case volumes",
+        #         "Best suited for complex, outcome-critical matters"
+        #     ],
+
+        #     "Efficient Volume Handlers": [
+        #         "Low cost per case",
+        #         "Fast cycle times",
+        #         "Ideal for high-volume, routine work"
+        #     ]
+        # }
+
+
+        # cluster_profile = cluster_profile_map.get(Cluster_id, ["No profile available."])
+
+
+
+        # st.markdown(f"""
+        # <div class="metric-card">
+        #     <h4>Assigned Firm Cluster</h4>
+        #     <h5>{Cluster_id}</h5>
+        #     <hr>
+        #     <b>Avg Cycle Time:</b> {Avg_Cycle_Time * 100} days<br>
+        #     <b>Win Rate:</b> {Win_Rate}%<br>
+        #     <b>Avg Cost:</b> ${Avg_Cost *10}K<br>
+        #     <b>Avg Claim Closed Count:</b> {Avg_claim_closed_cnt}<br>
+        #     <b>Avg Paid Post Appeal:</b> ${Avg_paid_post_appeal}K<br>
+
+        #     <hr>
+        #     <b>Typical Claim Profile</b>
+        #     <ul>
+        #         <li>{cluster_profile[0]}</li>
+        #         <li>{cluster_profile[1]}</li>
+        #         <li>{cluster_profile[2]}</li>
+        #     </ul>
+        #     <span class="small-text">22
+        #     Best suited for long-duration, high-exposure litigation.
+        #     </span>
+
+        # </div>
+        # """, unsafe_allow_html=True)
+
+
+        Lit_data_firm_df = pd.read_csv(
+            "synthetic_litigation_dataset_with_firms_and_cluster.csv"
+        )
+
+        selected_firm = claim["Firm Name"]
+
+        firm_row = Lit_data_firm_df[
+            Lit_data_firm_df["Firm Name"] == selected_firm
+        ]
+
+        if firm_row.empty:
+            st.error(f"Firm '{selected_firm}' not found in dataset.")
+        else:
+            Cluster_id = firm_row["Cluster_name"].iloc[0]
+
+            cluster_df = Lit_data_firm_df[
+                Lit_data_firm_df["Cluster_name"] == Cluster_id
+            ]
+
+            Avg_Cycle_Time = int(cluster_df["Cycle time"].mean())
+            Win_Rate = round(cluster_df["Win rate proxy"].mean() * 100, 1)
+            Avg_Cost = int(cluster_df["Cost per case"].mean())
+
+            Avg_claim_closed_cnt = int(
+                (1 / (1 + np.exp(-cluster_df["Case closed count"].mean()))) * 100
+            )
+
+            Avg_paid_post_appeal = int(
+                (1 / (1 + np.exp(-cluster_df["Paid post appeal"].mean()))) * 100
+            )
+
+            cluster_profile_map = {
+                "High-Value Core Firms": [
+                    "Strong win rates with balanced cost and cycle time",
+                    "Premium fee structure",
+                    "Reliable for high-value cases"
+                ],
+                "High-Cost / Underperformers": [
+                    "High cost per case",
+                    "Weaker win rates and slower cycle times",
+                    "Requires tighter performance governance"
+                ],
+                "Outcome Specialists": [
+                    "Highest win rates",
+                    "Moderate case volumes",
+                    "Best suited for complex, outcome-critical matters"
+                ],
+                "Efficient Volume Handlers": [
+                    "Low cost per case",
+                    "Fast cycle times",
+                    "Ideal for high-volume, routine work"
+                ]
+            }
+
+            cluster_profile = cluster_profile_map.get(
+                Cluster_id, ["No profile available."] * 3
+            )
+
+            st.markdown(f"""
+            <div class="metric-card">
+                <h4>Assigned Firm Cluster</h4>
+                <h5>{Cluster_id}</h5>
+                <hr>
+                <b>Avg Cycle Time:</b> {Avg_Cycle_Time} days<br>
+                <b>Win Rate:</b> {Win_Rate}%<br>
+                <b>Avg Cost:</b> ${Avg_Cost:,}<br>
+                <b>Avg Claim Closed Count:</b> {Avg_claim_closed_cnt}<br>
+                <b>Avg Paid Post Appeal:</b> ${Avg_paid_post_appeal}K<br>
+                <hr>
+                <b>Typical Claim Profile</b>
+                <ul>
+                    <li>{cluster_profile[0]}</li>
+                    <li>{cluster_profile[1]}</li>
+                    <li>{cluster_profile[2]}</li>
+                </ul> 
+                <span class="small-text">
+                Best suited for long-duration, high-exposure litigation. 
+                </span>
+            </div>
+            """, unsafe_allow_html=True)
+
 
     st.divider()
 
     # -------------------------
     # Recommended Firms
     # -------------------------
-    st.subheader("Recommended Firms (Within Cluster)")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        cycle_time_weight = st.slider(
-            "Cycle Time Weight",
-            min_value=0.0,
-            max_value=1.0,
-            value=0.3,
-            step=0.1
-        )
-    with col2:
-        win_rate_weight = st.slider(
-            "Win Rate Weight",
-            min_value=0.0,
-            max_value=1.0,
-            value=0.3,
-            step=0.1
-        )
-    with col3:
-        Cost_per_case_weight = st.slider(
-            "Cost Per Case Weight",
-            min_value=0.0,
-            max_value=1.0,
-            value=0.3,
-            step=0.1
-        )
 
+    st.subheader("Optimization Strategy")
 
-
-
-    Lit_data_firm_filter_df = Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == Cluster_id]
-
-
-
-    state = claim["FTR_JRSDTN_ST_ABBR"]
-
-
-    Lit_data_firm_filter_df = Lit_data_firm_filter_df[
-        Lit_data_firm_filter_df["state_list"].str.contains(
-            fr"\b{state}\b", na=False
-        )
-    ]
-
-
-    # ---- Compute weighted score ----
-    Lit_data_firm_filter_df['Weighted_Score'] = (
-        cycle_time_weight * (10 - Lit_data_firm_filter_df['Cycle time']) +
-        win_rate_weight * Lit_data_firm_filter_df['Win rate proxy'] +
-        Cost_per_case_weight * (10 - Lit_data_firm_filter_df['Cost per case'])
+    strategy = st.radio(
+        "Select Recommendation Strategy",
+        ["Outcome Focused", "Cost Focused"],
+        index=0,
+        horizontal=True
     )
 
-    top_firms = Lit_data_firm_filter_df.sort_values(
-        "Weighted_Score", ascending=False
-    ).head(3)
+    if strategy == "Outcome Focused":
 
-    # ---- Layout ----
-    f1, f2, f3, f4 = st.columns([1.2, 1.2, 1.2, 1])
 
-    # ---- Build firms list SAFELY ----
-    firms = []
-
-    for _, row in top_firms.iterrows():
-        firms.append(
-            (
-                row["Firm Name"],
-                row["state_list"],
-                f"{round(row['Win rate proxy'] * 100, 1)}%",
-                f"${int(row['Cost per case']*10)}K",
-                f"{int(row['Cycle time']) *100} Days"
+        st.subheader("Recommended Firms (Within Cluster)")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            cycle_time_weight = st.slider(
+                "Cycle Time Weight",
+                min_value=0.0,
+                max_value=1.0,
+                value=0.3,
+                step=0.1
             )
+        with col2:
+            win_rate_weight = st.slider(
+                "Win Rate Weight",
+                min_value=0.0,
+                max_value=1.0,
+                value=0.3,
+                step=0.1
+            )
+        with col3:
+            Cost_per_case_weight = st.slider(
+                "Cost Per Case Weight",
+                min_value=0.0,
+                max_value=1.0,
+                value=0.3,
+                step=0.1
+            )
+
+
+
+
+        Lit_data_firm_filter_df = Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == Cluster_id]
+
+
+
+        state = claim["FTR_JRSDTN_ST_ABBR"]
+
+
+        Lit_data_firm_filter_df = Lit_data_firm_filter_df[
+            Lit_data_firm_filter_df["state_list"].str.contains(
+                fr"\b{state}\b", na=False
+            )
+        ]
+
+
+        # ---- Compute weighted score ----
+        Lit_data_firm_filter_df['Weighted_Score'] = (
+            cycle_time_weight * (10 - Lit_data_firm_filter_df['Cycle time']) +
+            win_rate_weight * Lit_data_firm_filter_df['Win rate proxy'] +
+            Cost_per_case_weight * (10 - Lit_data_firm_filter_df['Cost per case'])
         )
 
-    # ---- Guard: no firms found ----
-    if not firms:
-        st.warning("No recommended firms found for the selected criteria.")
-    else:
-        # ---- Render firm cards ----
-        for col, firm in zip([f1, f2, f3], firms):
-            with col:
-                st.markdown(
-                    f"""
-                    <div class="metric-card">
-                        <h5>{firm[0]} ✅</h5>
-                        <span class = "large-text">{state}</span>
-                        <hr>
-                        <b>Win Rate:</b> {firm[2]}<br>
-                        <b>Avg Cost:</b> {firm[3]}<br>
-                        <b>Cycle Time:</b> {firm[4]}<br>
-                        
-                    </div>
-                    """,
-                    unsafe_allow_html=True
+        top_firms = Lit_data_firm_filter_df.sort_values(
+            "Weighted_Score", ascending=False
+        ).head(3)
+
+        # ---- Layout ----
+        f1, f2, f3, f4 = st.columns([1.2, 1.2, 1.2, 1])
+
+        # ---- Build firms list SAFELY ----
+        firms = []
+
+
+        for _, row in top_firms.iterrows():
+            firms.append(
+                (
+                    row["Firm Name"],
+                    row["state_list"],
+                    f"{round(row['Win rate proxy'] * 100, 1)}%",
+                    f"${int(row['Cost per case']*10)}K",
+                    f"{int(row['Cycle time']) *100} Days",
+                    row['Firm_Profile']
                 )
-    # -------------------------
-    # Decision Support Summary
-    # -------------------------
-    with f4:
-        progress = claim["proba"]
-        progres = round(claim["proba"] * 100, 1)
+            )
 
-        st.markdown(f"""
-        <div class="metric-card">
-            <h5>Decision Support Summary</h5>
-            <b>Model Confidence {progres}%</b>
-        </div>
-        """, unsafe_allow_html=True)
+        # ---- Guard: no firms found ----
+        if not firms:
+            st.warning("No recommended firms found for the selected criteria.")
+        else:
+            # ---- Render firm cards ----
+            for col, firm in zip([f1, f2, f3], firms):
+                with col:
+                    st.markdown(
+                        f"""
+                        <div class="metric-card">
+                            <h5>{firm[0]} ✅</h5>
+                            <span class = "large-text">{state}</span>
+                            <hr>
+                            <b>Win Rate:</b> {firm[2]}<br>
+                            <b>Avg Cost:</b> {firm[3]}<br>
+                            <b>Cycle Time:</b> {firm[4]}<br>
+                            <b>Firm Profile:</b> {firm[5]}<br>
 
- # e.g., 0.84 for 84%
+                            
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+        # -------------------------
+        # Decision Support Summary
+        # -------------------------
+        with f4:
+            progress = claim["proba"]
+            progres = round(claim["proba"] * 100, 1)
 
-        st.progress(progress)
+            st.markdown(f"""
+            <div class="metric-card">
+                <h5>Decision Support Summary</h5>
+                <b>Model Confidence {progres}%</b>
+            </div>
+            """, unsafe_allow_html=True)
 
-        st.markdown("""
-        <span class="small-text">
-        Decision support only.<br>
-        Final assignment at adjuster discretion.
-        </span>
-        """, unsafe_allow_html=True)
+    # e.g., 0.84 for 84%
 
-        st.radio(
-            "Optimization Strategy",
-            ["Outcome Focused", "Cost Focused"],
-            horizontal=True
-        )
+            st.progress(progress)
 
+            st.markdown("""
+            <span class="small-text">
+            Decision support only.<br>
+            Final assignment at adjuster discretion.
+            </span>
+            """, unsafe_allow_html=True)
+
+    else:
+        st.subheader("Recommended Firms (Within Cluster)")
+        col1, col2 = st.columns(2)
+        with col1:
+            cost_per_case = st.slider(
+                "Cost Per Case Weight",
+                min_value=0.0,
+                max_value=1.0,
+                value=0.3,
+                step=0.1
+            )
+        with col2:
+            paid_post_appeal = st.slider(
+                "Paid Post Appeal Weight",
+                min_value=0.0,
+                max_value=1.0,
+                value=0.3,
+                step=0.1
+            )
+
+
+
+
+        Lit_data_firm_filter_df = Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == Cluster_id]
+
+
+
+        state = claim["FTR_JRSDTN_ST_ABBR"]
+
+
+        Lit_data_firm_filter_df = Lit_data_firm_filter_df[
+            Lit_data_firm_filter_df["state_list"].str.contains(
+                fr"\b{state}\b", na=False
+            )
+        ]
+
+
+        # ---- Compute weighted score ----
+        Lit_data_firm_filter_df['Weighted_Score'] = (
+            cost_per_case * (Lit_data_firm_filter_df['Cost per case']) +
+            paid_post_appeal * Lit_data_firm_filter_df['Paid post appeal'] 
+            )
+
+        top_firms = Lit_data_firm_filter_df.sort_values(
+            "Weighted_Score", ascending=False
+        ).head(3)
+
+        # ---- Layout ----
+        f1, f2, f3, f4 = st.columns([1.2, 1.2, 1.2, 1])
+
+        # ---- Build firms list SAFELY ----
+        firms = []
+
+
+        for _, row in top_firms.iterrows():
+            firms.append(
+                (
+                    row["Firm Name"],
+                    row["state_list"],
+                    f"{round(row['Win rate proxy'] * 100, 1)}%",
+                    f"${int(row['Cost per case']*10)}K",
+                    f"{int(row['Cycle time']) *100} Days",
+                    row['Firm_Profile']
+                )
+            )
+
+        # ---- Guard: no firms found ----
+        if not firms:
+            st.warning("No recommended firms found for the selected criteria.")
+        else:
+            # ---- Render firm cards ----
+            for col, firm in zip([f1, f2, f3], firms):
+                with col:
+                    st.markdown(
+                        f"""
+                        <div class="metric-card">
+                            <h5>{firm[0]} ✅</h5>
+                            <span class = "large-text">{state}</span>
+                            <hr>
+                            <b>Win Rate:</b> {firm[2]}<br>
+                            <b>Avg Cost:</b> {firm[3]}<br>
+                            <b>Cycle Time:</b> {firm[4]}<br>
+                            <b>Firm Profile:</b> {firm[5]}<br>
+
+                            
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+        # -------------------------
+        # Decision Support Summary
+        # -------------------------
+        with f4:
+            progress = claim["proba"]
+            progres = round(claim["proba"] * 100, 1)
+
+            st.markdown(f"""
+            <div class="metric-card">
+                <h5>Decision Support Summary</h5>
+                <b>Model Confidence {progres}%</b>
+            </div>
+            """, unsafe_allow_html=True)
+
+    # e.g., 0.84 for 84%
+
+            st.progress(progress)
+
+            st.markdown("""
+            <span class="small-text">
+            Decision support only.<br>
+            Final assignment at adjuster discretion.
+            </span>
+            """, unsafe_allow_html=True)
 
 
 

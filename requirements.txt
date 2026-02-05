@@ -11,3 +11,4 @@ openai==1.107.1
 python-dotenv
 scipy==1.16.2
 matplotlib==3.10.8
+numpy==1.26.4
