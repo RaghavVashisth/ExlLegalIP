@@ -1779,7 +1779,7 @@ elif selected_screen == "Law Firm Assignment":
 
             Avg_Cycle_Time = int(cluster_df["Cycle time"].mean())
             Win_Rate = round(cluster_df["Win rate proxy"].mean() * 100, 1)
-            Avg_Cost = int(cluster_df["Cost per case"].mean())
+            Avg_Cost = int(cluster_df["Cost per case"].mean()) *10
 
             Avg_claim_closed_cnt = int(
                 (1 / (1 + np.exp(-cluster_df["Case closed count"].mean()))) * 100
@@ -1823,7 +1823,7 @@ elif selected_screen == "Law Firm Assignment":
                 <hr>
                 <b>Avg Cycle Time:</b> {Avg_Cycle_Time *100} days<br>
                 <b>Win Rate:</b> {Win_Rate}%<br>
-                <b>Avg Cost:</b> ${Avg_Cost:,}<br>
+                <b>Avg Cost:</b> ${Avg_Cost:,}K<br>
                 <b>Avg Claim Closed Count:</b> {Avg_claim_closed_cnt}<br>
                 <b>Avg Paid Post Appeal:</b> ${Avg_paid_post_appeal}K<br>
                 <hr>
@@ -1940,21 +1940,20 @@ elif selected_screen == "Law Firm Assignment":
             for col, firm in zip([f1, f2, f3], firms):
                 with col:
                     st.markdown(
-                        f"""
-                        <div class="metric-card">
-                            <h5>{firm[0]} ✅</h5>
-                            <span class = "large-text">{state}</span>
-                            <hr>
-                            <b>Win Rate:</b> {firm[2]}<br>
-                            <b>Avg Cost:</b> {firm[3]}<br>
-                            <b>Cycle Time:</b> {firm[4]}<br>
-                            <b>Firm Profile:</b> {firm[5]}<br>
-
-                            
-                        </div>
-                        """,
-                        unsafe_allow_html=True
+                    f"""
+                    <div class="metric-card">
+                        <h5>{firm[0]} ✅</h5>
+                        <span class="large-text">{state}</span>
+                        <hr>
+                        <b>Win Rate:</b> {firm[2]}<br>
+                        <b>Avg Cost:</b> {firm[3]}<br>
+                        <b>Cycle Time:</b> {firm[4]}<br>
+                        <b>Firm Profile:</b> {firm[5]}<br>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
                     )
+
         # -------------------------
         # Decision Support Summary
         # -------------------------
@@ -2192,6 +2191,10 @@ elif selected_screen == "Law Firm Assignment":
                         <div><b>State:</b> {row.get('FTR_JRSDTN_ST_ABBR', 'N/A')}</div>
                         <div><b>Injury:</b> {row.get('BODY_PART_INJD_DESC', 'N/A')}</div>
                         <div><b>Firm:</b> {row.get('Law Firm Name', 'N/A')}</div>
+                        <div><b>Demand: $</b> {row.get('DEMAND', 'N/A')}</div>
+                        <div><b>Offer: $</b> {row.get('OFFER', 'N/A')}</div>
+
+
                         
                     </div>
                     """,
