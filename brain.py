@@ -1780,13 +1780,12 @@ elif selected_screen == "Law Firm Assignment":
             Win_Rate = round(cluster_df["Win rate proxy"].mean() * 100, 3)
             Avg_Cost = int(cluster_df["Cost per case"].mean()) *10
 
-            Avg_claim_closed_cnt = int(
-                (1 / (1 + np.exp(-cluster_df["Case closed count"].mean()))) * 100
-            )
 
-            Avg_paid_post_appeal = int(
-                (1 / (1 + np.exp(-cluster_df["Paid post appeal"].mean()))) * 100
-            )
+            Avg_claim_closed_cnt = int(cluster_df["Case closed count"].mean() * 10)
+            
+
+            Avg_paid_post_appeal = int(cluster_df["Paid post appeal"].mean() * 5)
+            
 
             cluster_profile_map = {
                 "High-Value Core Firms": [
