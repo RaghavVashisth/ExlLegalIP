@@ -13,6 +13,7 @@ import time
 from scipy.spatial import ConvexHull
 from matplotlib.patches import Polygon
 import numpy as np
+import ast
 
 
 
@@ -750,154 +751,6 @@ elif selected_screen == "Attorney Rep Reviewed Claims":
                         key=f"notes_area_{idx}"
                     )
 
-    #         # --- ACTION COLUMN ---
-    #         with cols[7]:
-    #             # Label above dropdown
-    #             st.markdown(
-    #                 """
-    #                 <div id="action-section" style='text-align:center; margin-bottom:2px;'>
-    #                     <b>Action</b>
-    #                 </div>
-    #                 """,
-    #                 unsafe_allow_html=True
-    #             )
-
-    #             action_options = [
-    #                 "",
-    #                 "Awaiting Additional Info",
-    #                 "Dismiss",
-    #                 "Engage an Expert",
-    #                 "Increase Reserve",
-    #                 "Refer to Large Loss",
-    #                 "Refer to SIU",
-    #                 "Settle",
-    #                 "Additional Authority Granted",
-    #                 "In Litigation",
-    #                 "In Negotiations",
-    #                 "Requesting Mediation"
-    #             ]
-
-    #             # Determine default index safely
-    #             user_action_value = row.get("User_Action")
-    #             default_index = action_options.index(
-    #                 user_action_value) if user_action_value in action_options else 0
-
-    #             # Render Action dropdown
-    #             selected_action = st.selectbox(
-    #                 label="",
-    #                 options=action_options,
-    #                 key=f"action_{idx}",
-    #                 index=default_index,
-    #                 label_visibility="collapsed"
-    #             )
-
-    #         # --- ACTION DETAILS COLUMN ---
-    #         with cols[8]:
-    #             st.markdown(
-    #                 """
-    #                 <div id="action-details-section" style='text-align:center; margin-bottom:2px;'>
-    #                     <b>Action Details</b>
-    #                 </div>
-    #                 """,
-    #                 unsafe_allow_html=True
-    #             )
-
-    #             # Get detail options based on Action
-    #             if selected_action:
-    #                 action_details_options = action_detail_mapping.get(
-    #                     selected_action, [])
-    #                 options = [] + action_details_options
-
-    #                 user_action_detail_value = row.get("User_Action_Details")
-    #                 default_index = (
-    #                     options.index(user_action_detail_value)
-    #                     if user_action_detail_value in options
-    #                     else 0
-    #                 )
-
-    #                 selected_detail = st.selectbox(
-    #                     label="",
-    #                     options=options,
-    #                     key=f"action_details_{idx}",
-    #                     index=default_index,
-    #                     label_visibility="collapsed"
-    #                 )
-
-    #             else:
-    #                 selected_detail = st.selectbox(
-    #                     label="",
-    #                     options=[""],
-    #                     key=f"action_details_{idx}_disabled",
-    #                     label_visibility="collapsed"
-    #                 )
-
-    #         # --- UNIVERSAL ALIGNMENT STYLING ---
-    #         st.markdown(
-    #             """
-    # <style>
-    #     /* Consistent layout for both Action and Action Details dropdowns */
-    #     #action-section div[data-testid="stSelectbox"],
-    #     #action-details-section div[data-testid="stSelectbox"] {
-    #         display: flex;
-    #         flex-direction: column;
-    #         align-items: center;
-    #         justify-content: center;
-    #         margin-top: -6px !important;   /* Align both dropdowns neatly under label */
-    #         margin-bottom: 10px;
-    #         height: auto;
-    #     }
-
-    #     /* Uniform dropdown width and centered text */
-    #     #action-section div[data-testid="stSelectbox"] select,
-    #     #action-details-section div[data-testid="stSelectbox"] select {
-    #         width: 160px;
-    #         text-align: center;
-    #     }
-
-    #     /* This targets the visible Streamlit selectbox box, version-agnostic */
-    #     div[data-testid="stSelectbox"] [data-baseweb="select"] > div:nth-child(1)
-    # {
-            
-    #         border-radius: 6px !important;
-    #         color: #000000
-    #         /* #808080 -black #4682B4!important;*/
-            
-    #     }
-    # </style>
-    # """,
-    #             unsafe_allow_html=True
-    #         )
-    #         with cols[9]:
-    #             st.markdown("""
-    #                 <div style= text-align:center; height: 30px;'>
-    #                     <b>Save</b>
-    #                 </div>
-    #                 """, unsafe_allow_html=True)
-    #             # st.markdown("**Save**")
-    #             st.markdown(
-    #                 """
-    #                     <style>
-    #                     div.stButton > button {
-    #                         margin-top: -15px;
-    #                         margin-left: 8px;
-    #                         width: 100px;
-    #                         height: 40px;
-    #                         display: flex;
-    #                     }
-    #                     </style>
-    #                     """,
-    #                 unsafe_allow_html=True
-    #             )
-    #             if st.button("💾", key=f"save_{idx}"):
-    #                 df_all = pd.read_csv(att_data_path)
-    #                 df_all.at[idx, 'User_Action'] = selected_action
-    #                 df_all.at[idx, "User_Action_Details"] = selected_detail
-    #                 df_all.to_csv(att_data_path, index=False)
-
-    #                 st.success(
-    #                     f"✅ Action saved for Claim {row['CLM_NBR']}")
-
-                # --- ACTION COLUMN ---
             with cols[7]:
                 st.markdown(
                     """
@@ -1903,76 +1756,6 @@ elif selected_screen == "Law Firm Assignment":
     # Assigned Firm Cluster
     # -------------------------
     with right:
-        # a = "Phillips & Garcia, LLP"
-
-        # Lit_data_firm_df = pd.read_csv("synthetic_litigation_dataset_with_firms_and_cluster.csv")
-        # Cluster_id = Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == a]["Cluster_name"].values[0]
-        # Avg_Cycle_Time = int(Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == Cluster_id]["Cycle time"].mean())
-        # Win_Rate = round(Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == Cluster_id]["Win rate proxy"].mean()*100,1)
-        # Avg_Cost = int(Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == Cluster_id]["Cost per case"].mean())
-        # Avg_claim_closed_cnt = Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == Cluster_id]["Case closed count"]
-        # Avg_claim_closed_cnt = int((1 / (1 + np.exp(-Avg_claim_closed_cnt.mean()))) * 100)
-        # Paid_post_appeal = Lit_data_firm_df[Lit_data_firm_df["Cluster_name"] == Cluster_id]["Paid post appeal"]
-        # Avg_paid_post_appeal = int((1 / (1 + np.exp(-Paid_post_appeal.mean()))) * 100)
-
-
-
-
-        # cluster_profile_map = {
-        #     "High-Value Core Firms": [
-        #         "Strong win rates with balanced cost and cycle time",
-        #         "Premium fee structure",
-        #         "Reliable for high-value cases"
-        #     ],
-
-        #     "High-Cost / Underperformers": [
-        #         "High cost per case",
-        #         "Weaker win rates and slower cycle times",
-        #         "Requires tighter performance governance"
-        #     ],
-
-        #     "Outcome Specialists": [
-        #         "Highest win rates",
-        #         "Moderate case volumes",
-        #         "Best suited for complex, outcome-critical matters"
-        #     ],
-
-        #     "Efficient Volume Handlers": [
-        #         "Low cost per case",
-        #         "Fast cycle times",
-        #         "Ideal for high-volume, routine work"
-        #     ]
-        # }
-
-
-        # cluster_profile = cluster_profile_map.get(Cluster_id, ["No profile available."])
-
-
-
-        # st.markdown(f"""
-        # <div class="metric-card">
-        #     <h4>Assigned Firm Cluster</h4>
-        #     <h5>{Cluster_id}</h5>
-        #     <hr>
-        #     <b>Avg Cycle Time:</b> {Avg_Cycle_Time * 100} days<br>
-        #     <b>Win Rate:</b> {Win_Rate}%<br>
-        #     <b>Avg Cost:</b> ${Avg_Cost *10}K<br>
-        #     <b>Avg Claim Closed Count:</b> {Avg_claim_closed_cnt}<br>
-        #     <b>Avg Paid Post Appeal:</b> ${Avg_paid_post_appeal}K<br>
-
-        #     <hr>
-        #     <b>Typical Claim Profile</b>
-        #     <ul>
-        #         <li>{cluster_profile[0]}</li>
-        #         <li>{cluster_profile[1]}</li>
-        #         <li>{cluster_profile[2]}</li>
-        #     </ul>
-        #     <span class="small-text">22
-        #     Best suited for long-duration, high-exposure litigation.
-        #     </span>
-
-        # </div>
-        # """, unsafe_allow_html=True)
 
 
         Lit_data_firm_df = pd.read_csv(
@@ -2312,7 +2095,108 @@ elif selected_screen == "Law Firm Assignment":
             """, unsafe_allow_html=True)
 
 
+    st.divider()
 
+    # -------------------------
+    # Similar Claims Section
+    # -------------------------
+    st.subheader("🧠 Top 5 Similar Claims")
+
+    # Use already selected claim safely
+    selected_claim = claim
+
+    similar_ids = selected_claim["top_5_similar_claim_ids"]
+    similar_scores = selected_claim["top_5_similarity_scores"]
+
+    # Convert string → list (CSV safety)
+    if isinstance(similar_ids, str):
+        similar_ids = ast.literal_eval(similar_ids)
+
+    if isinstance(similar_scores, str):
+        similar_scores = ast.literal_eval(similar_scores)
+
+    # Ensure type consistency
+    similar_ids = [str(x) for x in similar_ids]
+
+    similar_claims = claims_df[
+        claims_df["claim_id"].astype(str).isin(similar_ids)
+    ].copy()
+
+    # Map similarity scores
+    score_map = dict(zip(similar_ids, similar_scores))
+    similar_claims["Similarity Score"] = (
+        similar_claims["claim_id"].astype(str).map(score_map)
+    )
+
+    # Sort by similarity
+    similar_claims = similar_claims.sort_values(
+        "Similarity Score",
+        ascending=False
+    )
+    cols = st.columns(5)
+    # for idx, (_, row) in enumerate(similar_claims.iterrows()):
+    #     with cols[idx % 5]:
+    #         st.markdown(
+    #             f"""
+    #             <div style="
+    #                 padding:12px;
+    #                 border-radius:12px;
+    #                 background-color:#f5f7fa;
+    #                 margin-bottom:15px;
+    #                 min-height:300px;
+    #                 border:1px solid #e0e0e0;
+    #             ">
+    #                 <h6>Claim ID</h6>
+    #                 <b>{row['claim_id']}</b>
+    #                 <hr>
+
+    #                 <b>Similarity:</b> {row['Similarity Score']:.2f}<br>
+    #                 <b>Type:</b> {row.get('SUB_DTL_DESC', 'N/A')}<br>
+    #                 <b>State:</b> {row['FTR_JRSDTN_ST_ABBR']}<br>
+    #                 <b>Injury:</b> {row['BODY_PART_INJD_DESC']}<br>
+    #                 <b>Firm:</b> {row['Law Firm Name']}<br>
+    #                 <b>Scope:</b> {row['match_scope']}<br>
+
+
+    #             </div>
+    #             """,
+    #             unsafe_allow_html=True
+    #         )
+    import streamlit.components.v1 as components
+
+    for i in range(0, len(similar_claims), 5):
+        cols = st.columns(5)
+
+        for col, (_, row) in zip(cols, similar_claims.iloc[i:i+5].iterrows()):
+            with col:
+                components.html(
+                    f"""
+                    <div style="
+                        padding:12px;
+                        border-radius:12px;
+                        background-color:#f5f7fa;
+                        margin-bottom:15px;
+                        min-height:260px;
+                        border:1px solid #e0e0e0;
+                        font-size:14px;
+                        font-family: Arial, sans-serif;
+                    ">
+                        <div style="font-weight:600; margin-bottom:6px;">Claim ID</div>
+                        <div style="font-size:16px; margin-bottom:8px;">
+                            {row.get('claim_id', 'N/A')}
+                        </div>
+                        <hr style="margin:6px 0;">
+
+                        <div><b>Similarity:</b> {row.get('Similarity Score', 0):.2f}</div>
+                        <div><b>Type:</b> {row.get('SUB_DTL_DESC', 'N/A')}</div>
+                        <div><b>State:</b> {row.get('FTR_JRSDTN_ST_ABBR', 'N/A')}</div>
+                        <div><b>Injury:</b> {row.get('BODY_PART_INJD_DESC', 'N/A')}</div>
+                        <div><b>Firm:</b> {row.get('Law Firm Name', 'N/A')}</div>
+                        
+                    </div>
+                    """,
+                    height=300,
+                )
 
 # -------------------- 📊 Monitoring Dashboard --------------------
 elif selected_screen == "Legal Spend Dashboard":
@@ -2321,9 +2205,7 @@ elif selected_screen == "Legal Spend Dashboard":
     # st.markdown("#### Embedded Power BI Dashboard Below:")
 
     powerbi_embed_url = """
- <iframe title="Legal Expense Dashboard" width="1200" height="800" src=https://app.powerbi.com/reportEmbed?reportId=dbc06794-896c-494e-a901-caa07670f375&autoAuth=true&ctid=dafe49bc-5ac3-4310-97b4-3e44a28cbf18
- frameborder="0" allowFullScreen="true"></iframe>
-
+<iframe title="Legal Expense Dashboard" width="1200" height="800" src="https://app.powerbi.com/reportEmbed?reportId=8919beb8-bc8b-446c-896d-5f9736da661c&autoAuth=true&ctid=dafe49bc-5ac3-4310-97b4-3e44a28cbf18" frameborder="0" allowFullScreen="true"></iframe>
     """
     componentspip.html(powerbi_embed_url, height=800)
 
