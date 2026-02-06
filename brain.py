@@ -1821,7 +1821,7 @@ elif selected_screen == "Law Firm Assignment":
                 <h4>Assigned Firm Cluster</h4>
                 <h5>{Cluster_id}</h5>
                 <hr>
-                <b>Avg Cycle Time:</b> {Avg_Cycle_Time} days<br>
+                <b>Avg Cycle Time:</b> {Avg_Cycle_Time *100} days<br>
                 <b>Win Rate:</b> {Win_Rate}%<br>
                 <b>Avg Cost:</b> ${Avg_Cost:,}<br>
                 <b>Avg Claim Closed Count:</b> {Avg_claim_closed_cnt}<br>
